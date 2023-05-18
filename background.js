@@ -1,71 +1,58 @@
 const default_config = {
-    maxGames: 4,
+    maxGames: 5,
     username: 'kapi_szon420',
     blocked: true,
-    losses: 9999
+    losses: 9999,
+    totalGames: 0
 }
 
-function checkGamesPlayed() {
+async function checkGamesPlayed() {
     // Get the maximum number of games and username from chrome.storage
-    chrome.storage.sync.get({
+    const items = await chrome.storage.sync.get({
         maxGames: 0,
         username: ''
-    }, function (items) {
-        let maxGames = items.maxGames;
-        let username = items.username.toLowerCase();
-        console.log('Username from storage:', username);
+    });
+    let maxGames = items.maxGames;
+    let username = items.username.toLowerCase();
 
-        // Get the current year and month
-        let date = new Date();
-        let year = date.getFullYear();
-        let month = (date.getMonth() + 1).toString().padStart(2, '0');
+    let date = new Date();
+    let year = date.getFullYear();
+    let month = (date.getMonth() + 1).toString().padStart(2, '0');
+    let url = `https://api.chess.com/pub/player/${username}/games/${year}/${month}`;
 
-        // Account for the edge case where it is the first of the month
-        if (date.getDate() === 1) {
-            month--;
-            if (month === 0) {
-                month = 12;
-                year--;
-            }
-        }
-        // Construct the URL for the API request
-        let url = `https://api.chess.com/pub/player/${username}/games/${year}/${month}`;
-
-        // Fetch data from the chess.com API
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                console.log('Data from chess.com API:', data);
-                // Initialize a counter for the number of losses
-                let losses = 0;
-
-                // Get the current Unix timestamp
-                let now = Math.round(new Date().getTime() / 1000);
-
-                // Iterate through all of the games
-                for (let game of data.games) {
-                    // Check if this game was played within the last 24 hours
-                    if (now - game.end_time <= 86400) {
-                        // Check if the user lost this game
-                        if (game.white.username.toLowerCase() === username && game.black.result === 'win') {
+    // Fetch data from the chess.com API
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Data from chess.com API:', data);
+            let losses = 0;
+            let totalGames = 0;
+            for (let game of data.games) {
+                let dateOfGame = new Date(game.end_time * 1000);
+                if (dateOfGame.getDate() === date.getDate() && dateOfGame.getMonth() === date.getMonth() && dateOfGame.getFullYear() === date.getFullYear()) {
+                    if (game.white.username.toLowerCase() === username) {
+                        if (game.black.result === 'win') {
                             losses++;
-                        } else if (game.black.username.toLowerCase() === username && game.white.result === 'win') {
+                        }
+                    } else if (game.black.username.toLowerCase() === username) {
+                        if (game.white.result === 'lose') {
                             losses++;
                         }
                     }
+                    totalGames++;
                 }
+            }
 
-                // Update the number of losses in chrome.storage
-                chrome.storage.sync.set({losses: losses});
+            // Update the number of losses in chrome.storage
+            chrome.storage.sync.set({losses: losses, totalGames: totalGames});
 
-                // Check if the user has exceeded the maximum number of losses allowed
-                if (losses > maxGames) {
-                    chrome.storage.sync.set({blocked: true});
-                } else {
-                    chrome.storage.sync.set({blocked: false});
-                }
-            });
-    });
+            // Check if the user has exceeded the maximum number of losses allowed
+            if (losses > maxGames) {
+                chrome.storage.sync.set({blocked: true});
+            } else {
+                chrome.storage.sync.set({blocked: false});
+            }
+        });
 }
 
 // Check the number of games played every 5 minutes
