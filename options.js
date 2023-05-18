@@ -7,7 +7,7 @@ function save_options() {
 
 // Load options from chrome.storage
 function load_options() {
-  chrome.storage.sync.get({ maxGames: 5, username: '', losses: 0 },
+  chrome.storage.sync.get({ maxGames: 5, username: '', losses: 999 },
   function(items) {
     document.getElementById('max-games').value = items.maxGames;
     document.getElementById('username').value = items.username;

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Chess Blocker",
-    "version": "1.0",
+    "version": "1.1",
     "permissions": [
         "activeTab",
         "storage",
@@ -16,7 +16,7 @@
     },
     "content_scripts": [
         {
-            "matches": ["https://www.chess.com/*"],
+            "matches": ["https://www.chess.com/*",  "https://www.lichess.org/*", "https://lichess.org/*", "https://www.chess24.com/*", "https://chess24.com/"],
             "js": ["content.js"]
         }
     ],
