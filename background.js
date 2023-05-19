@@ -35,7 +35,7 @@ async function checkGamesPlayed() {
                             losses++;
                         }
                     } else if (game.black.username.toLowerCase() === username) {
-                        if (game.white.result === 'lose') {
+                        if (game.white.result === 'win') {
                             losses++;
                         }
                     }
